@@ -1,6 +1,7 @@
 ﻿using ShoppingListApp.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using ShoppingListApp.Services;
 
 namespace ShoppingListApp.ViewModels
 {
@@ -36,7 +37,6 @@ namespace ShoppingListApp.ViewModels
             }
         }
 
-
         private ShoppingList _selectedShoppingList;
         public ShoppingList SelectedShoppingList
         {
@@ -47,6 +47,7 @@ namespace ShoppingListApp.ViewModels
                 {
                     _selectedShoppingList = value;
                     OnPropertyChanged(nameof(SelectedShoppingList));
+                    OnPropertyChanged(nameof(SelectedShoppingList.Items)); // Ensure UI updates when the shopping list changes
                 }
             }
         }
@@ -68,39 +69,74 @@ namespace ShoppingListApp.ViewModels
         public ICommand AddProductCommand { get; }
         public ICommand RemoveProductCommand { get; }
         public ICommand AddShoppingListCommand { get; }
+        public ICommand RefreshCommand { get; }  
+
+        private readonly ShoppingListService _shoppingListService;
 
         public MainViewModel()
         {
+            _shoppingListService = new ShoppingListService();
             AddProductCommand = new RelayCommand(AddProduct);
             RemoveProductCommand = new RelayCommand(RemoveProduct);
             AddShoppingListCommand = new RelayCommand(AddShoppingList);
+            RefreshCommand = new RelayCommand(RefreshShoppingLists);
+            LoadShoppingLists();
+        }
 
+        private async Task LoadShoppingLists()
+        {
+            var shoppingLists = await _shoppingListService.GetShoppingListsAsync();
+            foreach (var list in shoppingLists)
+            {
+                // Ensure Items is initialized for each shopping list
+                if (list.Items == null)
+                {
+                    list.Items = new List<ShoppingItem>();
+                }
+
+                // Sample data for testing
+                if (list.Name == "MyTestList")
+                {
+                    list.Items.Add(new ShoppingItem { Name = "Milk" });
+                    list.Items.Add(new ShoppingItem { Name = "Eggs" });
+                }
+
+                ShoppingLists.Add(list);
+            }
         }
 
 
+        private async void RefreshShoppingLists()
+        {
+            ShoppingLists.Clear();  
+            await LoadShoppingLists();  
+        }
 
         private void AddProduct()
         {
             if (SelectedShoppingList != null && !string.IsNullOrEmpty(NewProductName))
             {
-                // Ensure Products is initialized
-                if (SelectedShoppingList.Products == null)
+                // Ensure Items is initialized
+                if (SelectedShoppingList.Items == null)
                 {
-                    SelectedShoppingList.Products = new ObservableCollection<string>();
+                    SelectedShoppingList.Items = new List<ShoppingItem>();
                 }
 
-                SelectedShoppingList.Products.Add(NewProductName);
+                SelectedShoppingList.Items.Add(new ShoppingItem { Name = NewProductName });
                 NewProductName = string.Empty;
             }
         }
-
 
         private void RemoveProduct()
         {
             if (SelectedShoppingList != null && SelectedProduct != null)
             {
-                SelectedShoppingList.Products.Remove(SelectedProduct);
-                SelectedProduct = null;
+                var itemToRemove = SelectedShoppingList.Items.FirstOrDefault(i => i.Name == SelectedProduct);
+                if (itemToRemove != null)
+                {
+                    SelectedShoppingList.Items.Remove(itemToRemove);
+                    SelectedProduct = null;
+                }
             }
         }
 
@@ -108,11 +144,9 @@ namespace ShoppingListApp.ViewModels
         {
             if (!string.IsNullOrEmpty(NewShoppingListName))
             {
-                ShoppingLists.Add(new ShoppingList { Name = NewShoppingListName, Products = new ObservableCollection<string>() });
+                ShoppingLists.Add(new ShoppingList { Name = NewShoppingListName, Items = new List<ShoppingItem>() });
                 NewShoppingListName = string.Empty;
             }
         }
-
-
     }
 }

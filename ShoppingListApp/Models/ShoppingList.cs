@@ -12,20 +12,7 @@ namespace ShoppingListApp.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public List<ShoppingItem> Items { get; set; }
 
-        public ObservableCollection<string> Products { get; set; } = new ObservableCollection<string>();
-
-
+        public List<ShoppingItem> Items { get; set; } = new List<ShoppingItem>();
     }
 }
-
-
-
-
-
-
-
-
-
-
