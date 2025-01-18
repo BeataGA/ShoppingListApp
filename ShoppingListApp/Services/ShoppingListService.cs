@@ -17,23 +17,23 @@ namespace ShoppingListApp.Services
         {
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri("https://your-api-url.com/") // Zastąp swoim adresem API
+                BaseAddress = new Uri("http://localhost:5141/api/") 
             };
         }
 
         public async Task<List<ShoppingList>> GetShoppingListsAsync()
         {
-            var response = await _httpClient.GetAsync("shopping-lists");
+            var response = await _httpClient.GetAsync("ShoppingList");
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<List<ShoppingList>>(json);
         }
 
-        public async Task AddShoppingListAsync(string name)
+        public async Task SubmitShoppingListAsync(ShoppingList shoppingList)
         {
-            var content = new StringContent(JsonSerializer.Serialize(new { Name = name }), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync("shopping-lists", content);
+            var content = new StringContent(JsonSerializer.Serialize(shoppingList), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("ShoppingList", content);
             response.EnsureSuccessStatusCode();
         }
     }

@@ -1,12 +1,14 @@
 ﻿using ShoppingListApp.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using ShoppingListApp.Services;
 
 namespace ShoppingListApp.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
         public ObservableCollection<ShoppingList> ShoppingLists { get; set; } = new ObservableCollection<ShoppingList>();
+        private readonly ShoppingListService _shoppingListService;
 
         private string _newProductName;
         public string NewProductName
@@ -35,7 +37,6 @@ namespace ShoppingListApp.ViewModels
                 }
             }
         }
-
 
         private ShoppingList _selectedShoppingList;
         public ShoppingList SelectedShoppingList
@@ -68,22 +69,42 @@ namespace ShoppingListApp.ViewModels
         public ICommand AddProductCommand { get; }
         public ICommand RemoveProductCommand { get; }
         public ICommand AddShoppingListCommand { get; }
+        public ICommand RefreshCommand { get; }
+        public ICommand SubmitShoppingListCommand { get; } 
 
         public MainViewModel()
         {
+            _shoppingListService = new ShoppingListService();
+
             AddProductCommand = new RelayCommand(AddProduct);
             RemoveProductCommand = new RelayCommand(RemoveProduct);
             AddShoppingListCommand = new RelayCommand(AddShoppingList);
-
+            RefreshCommand = new RelayCommand(Refresh);
+            SubmitShoppingListCommand = new RelayCommand(SubmitShoppingList);
+            LoadShoppingLists();
         }
 
+        public async void LoadShoppingLists()
+        {
+            var shoppingLists = await _shoppingListService.GetShoppingListsAsync();
+            System.Diagnostics.Debug.WriteLine($"Loaded {shoppingLists.Count} shopping lists.");
+            ShoppingLists.Clear();
+            foreach (var list in shoppingLists)
+            {
+                System.Diagnostics.Debug.WriteLine($"List: {list.Name}, Products: {string.Join(", ", list.Products)}");
+                ShoppingLists.Add(list);
+            }
+        }
 
+        private void Refresh()
+        {
+            LoadShoppingLists();
+        }
 
         private void AddProduct()
         {
             if (SelectedShoppingList != null && !string.IsNullOrEmpty(NewProductName))
             {
-                // Ensure Products is initialized
                 if (SelectedShoppingList.Products == null)
                 {
                     SelectedShoppingList.Products = new ObservableCollection<string>();
@@ -93,7 +114,6 @@ namespace ShoppingListApp.ViewModels
                 NewProductName = string.Empty;
             }
         }
-
 
         private void RemoveProduct()
         {
@@ -113,6 +133,21 @@ namespace ShoppingListApp.ViewModels
             }
         }
 
-
+        private async void SubmitShoppingList()
+                {
+                    if (SelectedShoppingList != null)
+                    {
+                        try
+                        {
+                            await _shoppingListService.SubmitShoppingListAsync(SelectedShoppingList);
+                            LoadShoppingLists();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error submitting shopping list: {ex.Message}");
+                        }
+                    }
+                }        
+        
     }
 }

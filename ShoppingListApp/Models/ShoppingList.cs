@@ -5,27 +5,17 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace ShoppingListApp.Models
 {
     public class ShoppingList
     {
+        [JsonPropertyName("id")]
         public int Id { get; set; }
+        [JsonPropertyName("name")]
         public string Name { get; set; }
-        public List<ShoppingItem> Items { get; set; }
-
+        [JsonPropertyName("products")]
         public ObservableCollection<string> Products { get; set; } = new ObservableCollection<string>();
-
-
     }
 }
-
-
-
-
-
-
-
-
-
-
